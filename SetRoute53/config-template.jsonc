@@ -1,0 +1,7 @@
+// Create a file named config.json with these values filled out
+{
+    "zone_id": "the zone id of the hosted zone you want to update",
+    "record_name": "the record you want to update",
+    "record_type": "the record type you want to update",
+    "secret": "the record itself"
+}
