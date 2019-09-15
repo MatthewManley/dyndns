@@ -27,7 +27,7 @@ def lambda_handler(event, context):
     if record == ip:
         return results.success_no_update
 
-    #TODO: Update record if different
+    set_record(ip, route53, config)
     
     return results.success_changed
     
@@ -47,6 +47,28 @@ def get_record(route53Client: Route53Client, config: Configuration):
     records = record_set[0]['ResourceRecords']
     assert len(records) == 1
     return records[0]['Value']
+
+def set_record(ip: str, route53Client: Route53Client, config: Configuration):
+    change_batch = {
+        'Comment': f'Updating record {config.record_name}',
+        'Changes': [
+            {
+                'Action': 'UPSERT',
+                'ResourceRecordSet': {
+                    'Name': config.record_name,
+                    'Type': config.record_type,
+                    'TTL': 300, #TODO Don't hardcode TTL
+                    'ResourceRecords': [
+                        {
+                            'Value': ip
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+    
+    route53Client.change_resource_record_sets(HostedZoneId=config.zone_id, ChangeBatch=change_batch)
 
 def gen_hash(ip, secret):
     combined = ip+secret
