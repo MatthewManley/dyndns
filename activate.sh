@@ -1,0 +1,1 @@
+source dyndns/bin/activate

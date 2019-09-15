@@ -2,25 +2,26 @@ import json
 import boto3
 import hashlib
 import results
+from configuration import Configuration
 from boto3_type_annotations.route53 import Client as Route53Client
 
 def lambda_handler(event, context):
     route53: Route53Client = boto3.client('route53')
-    config = json.loads("config.json")
+    config = Configuration("config.json")
     ip = event['ip']
     client_body = event['body-json']
 
     # Checks that the ip address the client reports is the ip address of the client
-    if client_body['ip'] != ip:
+    if config.require_same_ip and client_body['ip'] != ip:
         return results.invalid_ip_address
     
     # Ensures the client knows the secret
     calculated_hash = gen_hash(ip, config.secret)
     if client_body['hash'] != calculated_hash:
-        return statusCode.invalid_secret
+        return results.invalid_secret
 
     # Fetch the current Route53 record value
-    record = get_record(Route53Client)
+    record = get_record(route53, config)
 
     # The Route53 record is up to date, do nothing and return success
     if record == ip:
@@ -30,7 +31,7 @@ def lambda_handler(event, context):
     
     return results.success_changed
     
-def get_record(route53Client: Route53Client):
+def get_record(route53Client: Route53Client, config: Configuration):
     response = route53Client.list_resource_record_sets(
         HostedZoneId=config.zone_id,
         StartRecordName=config.record_name,
@@ -48,7 +49,5 @@ def get_record(route53Client: Route53Client):
     return records[0]['Value']
 
 def gen_hash(ip, secret):
-    return hashlib.sha512(ip+secret).hexdigest()
-
-def get_config():
-    return json.loads("config.json")
+    combined = ip+secret
+    return hashlib.sha512(combined.encode("utf-8")).hexdigest()

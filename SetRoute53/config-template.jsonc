@@ -3,5 +3,6 @@
     "zone_id": "the zone id of the hosted zone you want to update",
     "record_name": "the record you want to update",
     "record_type": "the record type you want to update",
-    "secret": "the record itself"
+    "secret": "the record itself",
+    "require_same_ip": true
 }
